@@ -154,7 +154,7 @@ function load(name: string, bytes: Uint8Array): void {
 
 async function loadDemo(): Promise<void> {
   try {
-    const response = await fetch("demo.pan");
+    const response = await fetch("assets/demo.pan");
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     load("demo.pan", new Uint8Array(await response.arrayBuffer()));
   } catch (e) {
@@ -309,7 +309,7 @@ exportDialog.oncancel = (e) => {
 };
 
 const help = byId<HTMLDialogElement>("help");
-installTooltips();
+installTooltips(byId<HTMLInputElement>("tips"));
 const tour = new Tour(() => player !== null, () => void loadDemo());
 byId("tour-open").onclick = () => {
   help.close();

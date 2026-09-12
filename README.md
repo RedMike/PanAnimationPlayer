@@ -6,6 +6,8 @@ into the virtual machine that drives it.
 
 Everything runs client-side in plain HTML, CSS and JavaScript. No file is uploaded anywhere.
 
+The latest build is hosted on GitHub Pages at https://redmike.github.io/PanAnimationPlayer/.
+
 ## Features
 
 * Play, pause, step, rewind and scrub through frames
@@ -28,8 +30,8 @@ Then open `index.html` in a browser. `npm run watch` rebuilds on change and `npm
 type-checks the sources.
 
 Pushes to `main` build and publish the page to GitHub Pages through the workflow in
-`.github/workflows/pages.yml`; enable Pages with the "GitHub Actions" source in the repository
-settings for it to deploy.
+`.github/workflows/pages.yml`, which serves the latest build at
+https://redmike.github.io/PanAnimationPlayer/.
 
 ## Format
 

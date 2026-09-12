@@ -2,7 +2,16 @@ import { GLOSSARY } from "./glossary";
 
 const GAP = 8;
 
-export function installTooltips(): void {
+const STORAGE_KEY = "pan-tips";
+
+export function installTooltips(toggle: HTMLInputElement): void {
+  let enabled = localStorage.getItem(STORAGE_KEY) !== "off";
+  toggle.checked = enabled;
+  toggle.onchange = () => {
+    enabled = toggle.checked;
+    localStorage.setItem(STORAGE_KEY, enabled ? "on" : "off");
+  };
+
   const tip = document.createElement("div");
   tip.id = "tooltip";
   tip.hidden = true;
@@ -22,8 +31,9 @@ export function installTooltips(): void {
   };
 
   const show = (target: Element) => {
-    const entry = GLOSSARY[target.getAttribute("data-tip") ?? ""];
-    if (!entry) return hide();
+    const key = target.getAttribute("data-tip") ?? "";
+    const entry = GLOSSARY[key];
+    if (!entry || (!enabled && key !== "tips")) return hide();
     current = target;
     title.textContent = entry[0];
     text.textContent = entry[1];

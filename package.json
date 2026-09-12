@@ -8,7 +8,7 @@
     "build": "esbuild src/main.ts --bundle --format=iife --target=es2020 --outfile=dist/app.js",
     "watch": "esbuild src/main.ts --bundle --format=iife --target=es2020 --outfile=dist/app.js --watch",
     "check": "tsc --noEmit",
-    "demo": "node tools/make-demo.ts demo.pan"
+    "demo": "node tools/make-demo.ts assets/demo.pan"
   },
   "devDependencies": {
     "@types/node": "22.20.2",

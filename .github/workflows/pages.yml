@@ -28,8 +28,9 @@ jobs:
       - run: npm run build
       - run: |
           mkdir site
-          cp index.html styles.css demo.pan site/
+          cp index.html styles.css site/
           cp -r dist site/dist
+          cp -r assets site/assets
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

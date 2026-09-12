@@ -52,6 +52,12 @@ header h1 { font-size: 20px; margin: 0 8px 0 0; color: var(--white); text-shadow
 .file-pick:hover { background: var(--white); }
 .file-pick input { display: none; }
 
+.tips-toggle { display: inline-flex; align-items: center; gap: 4px; color: var(--white); cursor: pointer; text-transform: uppercase; }
+
+.links { margin-left: auto; display: flex; gap: 14px; }
+.links a { color: var(--white); text-transform: uppercase; text-decoration: none; border-bottom: 2px solid var(--white); }
+.links a:hover { color: var(--yellow); border-color: var(--yellow); }
+
 .muted { color: var(--grey); }
 
 button, select, input[type="number"], input[type="text"] {

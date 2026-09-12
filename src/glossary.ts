@@ -75,6 +75,7 @@ export const GLOSSARY: Record<string, [string, string]> = {
   file: ["Open .PAN", "Load a PAN file from your machine. Nothing is uploaded; parsing and playback run in the browser. Dropping a file anywhere on the page also works."],
   help: ["Help", "Opens the reference on the PAN format and the viewer."],
   demo: ["Load demo", "Opens a small animation that ships with the viewer. It was made for the viewer, not taken from the game, and exercises registers, loops, following and stamping."],
+  tips: ["Tips", "Turns the hover explanations on or off for everything except this toggle."],
   tour: ["Tour", "Walks through loading a file, the player controls and the register inputs."],
   rewind: ["Rewind", "Back to frame 0. Keyboard: Home."],
   back: ["Previous frame", "Step one frame back. Keyboard: Left arrow."],

@@ -365,5 +365,5 @@ function build(): Uint8Array {
 }
 
 const bytes = build();
-writeFileSync(process.argv[2] ?? "demo.pan", bytes);
+writeFileSync(process.argv[2] ?? "assets/demo.pan", bytes);
 console.log(`wrote ${bytes.length} bytes`);

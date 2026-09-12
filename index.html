@@ -13,7 +13,13 @@
   <span id="file-name" class="muted">drop a file anywhere on the page</span>
   <button id="demo-open" type="button" data-tip="demo">Load demo</button>
   <button id="help-open" type="button" data-tip="help">Help</button>
+  <label class="tips-toggle" data-tip="tips"><input id="tips" type="checkbox" checked> Tips</label>
   <button id="tour-open" type="button" data-tip="tour">Tour</button>
+  <nav class="links">
+    <a href="https://github.com/RedMike/PanAnimationPlayer" target="_blank" rel="noopener">Github</a>
+    <a href="https://github.com/RedMike/CovertActionTools" target="_blank" rel="noopener">CovertActionTools</a>
+    <a href="https://mikeroibu.com/" target="_blank" rel="noopener">Author</a>
+  </nav>
 </header>
 
 <main id="main" hidden>
@@ -102,7 +108,7 @@
     <h3>Using the viewer</h3>
     <ul>
       <li><b>Tour</b> in the header walks through loading a file, playback and register inputs; it also starts on the first visit. Skip, Escape or a click outside the highlight leaves it.</li>
-      <li><b>Hover</b> over labels, buttons, table headers, instruction names and step names for a short explanation of each.</li>
+      <li><b>Hover</b> over labels, buttons, table headers, instruction names and step names for a short explanation of each. The <b>Tips</b> toggle in the header turns these off.</li>
       <li><b>Open</b> a <code>.PAN</code> file with the button or by dropping it on the page. <b>Load demo</b> opens a small animation that ships with the viewer, made for it rather than taken from the game.</li>
       <li><b>Play / pause</b> with the button or <kbd>Space</kbd>. <kbd>&larr;</kbd> and <kbd>&rarr;</kbd> step one frame, <kbd>Home</kbd> rewinds.</li>
       <li><b>Scrub</b> with the slider. Every frame is recomputed from frame 0, so seeking backwards is exact.</li>
