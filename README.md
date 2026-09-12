@@ -14,7 +14,8 @@ Everything runs client-side in plain HTML, CSS and JavaScript. No file is upload
 * Sprite slot table, VM stack and registers, triggered audio indices and warnings
 * Every embedded image shown through the file's colour block
 * Export any frame range as a WebM video at the file's frame rate
-* Built-in help describing the PAN format and the viewer
+* Built-in help, hover explanations for every control and term, and a guided first-run tour
+* A demo animation made for the viewer, so it can be tried without the game's files
 
 ## Building
 

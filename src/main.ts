@@ -3,6 +3,8 @@ import { ExportJob, exportWebm, frameDelayMs, webmMimeType } from "./export";
 import { toRgba } from "./palette";
 import { Op, PanFile, parsePan } from "./pan";
 import { Player } from "./player";
+import { installTooltips } from "./tooltip";
+import { Tour } from "./tour";
 import { DebugView, byId, el } from "./ui";
 
 let player: Player | null = null;
@@ -108,7 +110,8 @@ function buildInputs(): void {
       commit();
       render();
     };
-    const now = el("button", { type: "button", textContent: "now", title: "Apply at the current frame" });
+    const now = el("button", { type: "button", textContent: "now" });
+    now.dataset.tip = "regNow";
     now.onclick = () => {
       frame.value = String(p.frame);
       commit();
@@ -146,11 +149,25 @@ function load(name: string, bytes: Uint8Array): void {
   buildInputs();
   updatePlayButton();
   render();
+  tour.notifyFileLoaded();
+}
+
+async function loadDemo(): Promise<void> {
+  try {
+    const response = await fetch("demo.pan");
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    load("demo.pan", new Uint8Array(await response.arrayBuffer()));
+  } catch (e) {
+    alert(`Could not fetch the demo animation: ${(e as Error).message}`);
+  }
 }
 
 async function loadFile(file: File): Promise<void> {
   load(file.name, new Uint8Array(await file.arrayBuffer()));
 }
+
+byId("demo-open").onclick = () => void loadDemo();
+byId("demo-empty").onclick = () => void loadDemo();
 
 byId<HTMLInputElement>("file").onchange = (e) => {
   const file = (e.target as HTMLInputElement).files?.[0];
@@ -292,6 +309,13 @@ exportDialog.oncancel = (e) => {
 };
 
 const help = byId<HTMLDialogElement>("help");
+installTooltips();
+const tour = new Tour(() => player !== null, () => void loadDemo());
+byId("tour-open").onclick = () => {
+  help.close();
+  tour.start();
+};
+if (Tour.shouldAutoStart()) tour.start();
 byId("help-open").onclick = () => help.showModal();
 byId("help-close").onclick = () => help.close();
 help.onclick = (e) => {

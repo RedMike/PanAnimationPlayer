@@ -1,4 +1,4 @@
-import { backgroundName, bytesText, hex, instructionHint, instructionOperand, opName, stepName, stepOperand } from "./disasm";
+import { OP_NAMES, STEP_NAMES, backgroundName, bytesText, hex, instructionHint, instructionOperand, opName, stepName, stepOperand } from "./disasm";
 import { PanImage } from "./image";
 import { COLOR_NAMES, cssColor, toRgba } from "./palette";
 import { Background, Op, PanFile } from "./pan";
@@ -16,8 +16,20 @@ export function byId<T extends HTMLElement>(id: string): T {
   return document.getElementById(id) as T;
 }
 
-function cell(text: string, className = ""): HTMLTableCellElement {
-  return el("td", { textContent: text, className });
+function cell(text: string, className = "", tip = ""): HTMLTableCellElement {
+  const node = el("td", { textContent: text, className });
+  if (tip) node.dataset.tip = tip;
+  return node;
+}
+
+function heads(...items: [string, string][]): HTMLTableRowElement {
+  const row = el("tr");
+  for (const [text, tip] of items) {
+    const th = el("th", { textContent: text });
+    if (tip) th.dataset.tip = tip;
+    row.append(th);
+  }
+  return row;
 }
 
 function jumpLink(target: number, listId: string): HTMLAnchorElement {
@@ -72,30 +84,36 @@ export class DebugView {
     const tab = byId("tab-info");
     tab.replaceChildren();
     const dl = el("dl");
-    const add = (k: string, v: string | Node) => dl.append(el("dt", { textContent: k }), el("dd", {}, v));
-    add("File", `${pan.name} (${pan.size} bytes)`);
-    add("Size", `${pan.width} x ${pan.height}`);
-    add("Position", `${pan.positionX}, ${pan.positionY}`);
-    add("Frame delay", `${pan.frameDelay} tick${pan.frameDelay === 1 ? "" : "s"} (${(18.2 / Math.max(pan.frameDelay, 1)).toFixed(1)} fps)`);
+    const add = (k: string, v: string | Node, tip = "") => {
+      const dt = el("dt", { textContent: k });
+      if (tip) dt.dataset.tip = tip;
+      dl.append(dt, el("dd", {}, v));
+    };
+    add("File", `${pan.name} (${pan.size} bytes)`, "infoFile");
+    add("Size", `${pan.width} x ${pan.height}`, "infoSize");
+    add("Position", `${pan.positionX}, ${pan.positionY}`, "infoPosition");
+    add("Frame delay", `${pan.frameDelay} tick${pan.frameDelay === 1 ? "" : "s"} (${(18.2 / Math.max(pan.frameDelay, 1)).toFixed(1)} fps)`, "infoDelay");
     let background = backgroundName(pan.backgroundType);
     if (pan.backgroundType === Background.ClearToColor) background += ` (colour ${pan.clearColor}, extra byte ${pan.clearUnknown})`;
     if (pan.backgroundType === Background.ClearToImage && pan.background) background += ` (${pan.background.width} x ${pan.background.height})`;
-    add("Background", background);
-    add("Image format", pan.rawImages ? "raw" : "compressed");
-    add("Images", `${pan.images.length}${pan.background ? " + background" : ""}`);
-    add("Data section", `${pan.data.length} bytes at file offset ${hex(pan.dataOffset)} (declared ${pan.declaredDataLength})`);
-    add("Instructions", `${pan.instructions.length} reachable`);
-    add("Steps", `${pan.steps.length} reachable in ${pan.stepStarts.size} sequence${pan.stepStarts.size === 1 ? "" : "s"}`);
+    add("Background", background, "infoBackground");
+    add("Image format", pan.rawImages ? "raw" : "compressed", "infoFormat");
+    add("Images", `${pan.images.length}${pan.background ? " + background" : ""}`, "infoImages");
+    add("Data section", `${pan.data.length} bytes at file offset ${hex(pan.dataOffset)} (declared ${pan.declaredDataLength})`, "infoData");
+    add("Instructions", `${pan.instructions.length} reachable`, "infoInstructions");
+    add("Steps", `${pan.steps.length} reachable in ${pan.stepStarts.size} sequence${pan.stepStarts.size === 1 ? "" : "s"}`, "infoSteps");
     const registers = new Set<number>();
     for (const ins of pan.instructions) {
       if ((ins.opcode === Op.Push && ins.sub !== 0) || ins.opcode === Op.PopToRegister) registers.add(ins.value);
     }
-    add("Registers used", registers.size ? [...registers].sort((a, b) => a - b).map((r) => `R${r}`).join(", ") : "none");
+    add("Registers used", registers.size ? [...registers].sort((a, b) => a - b).map((r) => `R${r}`).join(", ") : "none", "infoRegisters");
     tab.append(dl);
 
     const block = pan.colorBlock;
     if (block) {
-      tab.append(el("h3", { textContent: `Colour block (kind ${block.kind})` }));
+      const heading = el("h3", { textContent: `Colour block (kind ${block.kind})` });
+      heading.dataset.tip = "colourBlock";
+      tab.append(heading);
       if (block.kind === 0x00 || block.kind === 0x02) {
         const swatches = el("div", { className: "swatches" });
         const palette = this.player.engine.palette;
@@ -117,7 +135,7 @@ export class DebugView {
 
     tab.append(el("h3", { textContent: "Image table" }));
     const table = el("table");
-    table.append(el("thead", {}, el("tr", {}, el("th", { textContent: "ID" }), el("th", { textContent: "Index" }), el("th", { textContent: "Size" }), el("th", { textContent: "Offset" }), el("th", { textContent: "Extra" }))));
+    table.append(el("thead", {}, heads(["ID", "imageId"], ["Index", "imageIndex"], ["Size", "imageSize"], ["Offset", "imageOffset"], ["Extra", "imageExtra"])));
     const body = el("tbody");
     for (let id = 0; id < 250; id++) {
       const index = pan.imageIdToIndex[id];
@@ -153,12 +171,12 @@ export class DebugView {
     tab.replaceChildren();
     this.instructionRows.clear();
     const table = el("table", { id: "instruction-list" });
-    table.append(el("thead", {}, el("tr", {}, el("th", { textContent: "Offset" }), el("th", { textContent: "Bytes" }), el("th", { textContent: "Instruction" }), el("th", { textContent: "Operand" }), el("th", { textContent: "Folded arguments" }))));
+    table.append(el("thead", {}, heads(["Offset", "offset"], ["Bytes", "bytes"], ["Instruction", "instruction"], ["Operand", "operand"], ["Folded arguments", "folded"])));
     const body = el("tbody");
     pan.instructions.forEach((ins, i) => {
       const row = el("tr");
       row.dataset.offset = String(ins.offset);
-      row.append(cell(hex(ins.offset), pan.jumpTargets.has(ins.offset) ? "label" : "dim"), cell(bytesText(pan.data, ins.offset, ins.length), "dim"), cell(opName(ins.opcode)));
+      row.append(cell(hex(ins.offset), pan.jumpTargets.has(ins.offset) ? "label" : "dim"), cell(bytesText(pan.data, ins.offset, ins.length), "dim"), cell(opName(ins.opcode), "", OP_NAMES[ins.opcode] ?? ""));
       const operand = el("td");
       if (ins.opcode === Op.Jump || ins.opcode === Op.ConditionalJump || ins.opcode === Op.Call) operand.append(jumpLink(ins.value & 0xffff, "instruction-list"));
       else operand.textContent = instructionOperand(ins);
@@ -186,13 +204,13 @@ export class DebugView {
     this.stepRows.clear();
     this.stepSpriteCells.clear();
     const table = el("table", { id: "step-list" });
-    table.append(el("thead", {}, el("tr", {}, el("th", { textContent: "Offset" }), el("th", { textContent: "Bytes" }), el("th", { textContent: "Step" }), el("th", { textContent: "Operand" }), el("th", { textContent: "Sequence" }), el("th", { textContent: "Sprites here" }))));
+    table.append(el("thead", {}, heads(["Offset", "offset"], ["Bytes", "bytes"], ["Step", "step"], ["Operand", "operand"], ["Sequence", "sequence"], ["Sprites here", "spritesHere"])));
     const body = el("tbody");
     for (const step of pan.steps) {
       const row = el("tr");
       row.dataset.offset = String(step.offset);
       const starts = pan.stepStarts.get(step.offset);
-      row.append(cell(hex(step.offset), starts || pan.stepTargets.has(step.offset) ? "label" : "dim"), cell(bytesText(pan.data, step.offset, step.length), "dim"), cell(stepName(step.type)));
+      row.append(cell(hex(step.offset), starts || pan.stepTargets.has(step.offset) ? "label" : "dim"), cell(bytesText(pan.data, step.offset, step.length), "dim"), cell(stepName(step.type), "", STEP_NAMES[step.type] ?? ""));
       const operand = el("td");
       if (step.type === 0x06) operand.append(jumpLink(step.a, "step-list"));
       else operand.textContent = stepOperand(step);
@@ -258,7 +276,7 @@ export class DebugView {
   private updateSprites(engine: Engine): void {
     const tab = byId("tab-sprites");
     const table = el("table");
-    table.append(el("thead", {}, el("tr", {}, ...["Slot", "Active", "Image", "Position", "Own pos", "Follow", "Step", "Speed", "Credit", "Rate", "Flags", "Counters", "Steps this frame"].map((t) => el("th", { textContent: t })))));
+    table.append(el("thead", {}, heads(["Slot", "slot"], ["Active", "active"], ["Image", "image"], ["Position", "position"], ["Own pos", "ownPos"], ["Follow", "follow"], ["Step", "stepPtr"], ["Speed", "speed"], ["Credit", "credit"], ["Rate", "rate"], ["Flags", "flags"], ["Counters", "counters"], ["Steps this frame", "stepsThisFrame"])));
     const body = el("tbody");
     let any = false;
     for (let i = 1; i <= MAX_SPRITES; i++) {
@@ -297,19 +315,25 @@ export class DebugView {
   private updateState(engine: Engine): void {
     const tab = byId("tab-state");
     const dl = el("dl");
-    const add = (k: string, v: string) => dl.append(el("dt", { textContent: k }), el("dd", { textContent: v }));
-    add("Frame", String(engine.currentFrame));
-    add("Instruction pointer", hex(engine.ip) + (engine.endReached ? " (VM ended)" : ""));
-    add("Waiting", engine.waiting ? `${engine.framesToWait} more frame${engine.framesToWait === 1 ? "" : "s"}` : "no");
-    add("Animation ended", engine.ended ? "yes (EndImmediate)" : "no");
-    add("Stack", engine.stack.length ? engine.stack.join(" ") + "  (top is last)" : "empty");
-    add("Audio this frame", engine.audio.length ? engine.audio.join(", ") : "none");
-    add("Instructions this frame", engine.lastInstructions.length ? engine.lastInstructions.map((o) => hex(o)).join(" ") : "none");
+    const add = (k: string, v: string, tip: string) => {
+      const dt = el("dt", { textContent: k });
+      dt.dataset.tip = tip;
+      dl.append(dt, el("dd", { textContent: v }));
+    };
+    add("Frame", String(engine.currentFrame), "vmFrame");
+    add("Instruction pointer", hex(engine.ip) + (engine.endReached ? " (VM ended)" : ""), "vmIp");
+    add("Waiting", engine.waiting ? `${engine.framesToWait} more frame${engine.framesToWait === 1 ? "" : "s"}` : "no", "vmWaiting");
+    add("Animation ended", engine.ended ? "yes (EndImmediate)" : "no", "vmEnded");
+    add("Stack", engine.stack.length ? engine.stack.join(" ") + "  (top is last)" : "empty", "vmStack");
+    add("Audio this frame", engine.audio.length ? engine.audio.join(", ") : "none", "vmAudio");
+    add("Instructions this frame", engine.lastInstructions.length ? engine.lastInstructions.map((o) => hex(o)).join(" ") : "none", "vmInstructions");
     const grid = el("div", { className: "registers-grid" });
     for (let i = 0; i < MAX_REGISTERS; i++) {
       grid.append(el("span", { className: engine.registers[i] !== 0 ? "set" : "", textContent: `R${i} = ${engine.registers[i]}` }));
     }
-    tab.replaceChildren(dl, el("h3", { textContent: "Registers" }), grid);
+    const heading = el("h3", { textContent: "Registers" });
+    heading.dataset.tip = "vmRegisters";
+    tab.replaceChildren(dl, heading, grid);
   }
 
   private updateWarnings(engine: Engine): void {
