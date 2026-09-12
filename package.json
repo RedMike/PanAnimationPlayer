@@ -1,0 +1,15 @@
+{
+  "name": "pan-animation-player",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Browser viewer for Covert Action PAN animation files",
+  "scripts": {
+    "build": "esbuild src/main.ts --bundle --format=iife --target=es2020 --outfile=dist/app.js",
+    "watch": "esbuild src/main.ts --bundle --format=iife --target=es2020 --outfile=dist/app.js --watch",
+    "check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.6.0"
+  }
+}

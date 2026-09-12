@@ -1,0 +1,8 @@
+/*.md
+!/README.md
+/.*/
+!/.github/
+sample/
+node_modules/
+dist/
+*.log
