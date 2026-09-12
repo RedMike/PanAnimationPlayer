@@ -119,13 +119,14 @@ function buildInputs(): void {
 
 function load(name: string, bytes: Uint8Array): void {
   player?.pause();
+  let pan: PanFile;
   try {
-    const pan = parsePan(name, bytes);
-    player = new Player(pan);
+    pan = parsePan(name, bytes);
   } catch (e) {
     alert(`Could not load ${name}: ${(e as Error).message}`);
     return;
   }
+  player = new Player(pan);
   player.speed = Number(speed.value);
   player.maxFrames = Number(maxFrames.value) || 500;
   player.reset();
@@ -133,8 +134,8 @@ function load(name: string, bytes: Uint8Array): void {
   player.onPlayState = updatePlayButton;
   view = new DebugView(player);
   view.onSelectSprite = render;
-  screen.width = overlay.width = pan(player).width;
-  screen.height = overlay.height = pan(player).height;
+  screen.width = overlay.width = pan.width;
+  screen.height = overlay.height = pan.height;
   imageData = null;
   applyZoom();
   byId("file-name").textContent = name;
@@ -144,10 +145,6 @@ function load(name: string, bytes: Uint8Array): void {
   buildInputs();
   updatePlayButton();
   render();
-}
-
-function pan(p: Player): PanFile {
-  return p.pan;
 }
 
 async function loadFile(file: File): Promise<void> {
