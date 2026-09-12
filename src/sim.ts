@@ -103,6 +103,33 @@ export class Engine {
     this.frame = this.background.slice();
   }
 
+  clone(): Engine {
+    const copy = new Engine(this.pan);
+    copy.background.set(this.background);
+    copy.frame.set(this.frame);
+    for (let i = 0; i <= MAX_SPRITES; i++) {
+      copy.sprites[i] = { ...this.sprites[i], counters: [...this.sprites[i].counters], lastSteps: [...this.sprites[i].lastSteps] };
+    }
+    copy.stack.push(...this.stack);
+    copy.registers.set(this.registers);
+    copy.ip = this.ip;
+    copy.waiting = this.waiting;
+    copy.waitCount = this.waitCount;
+    copy.framesToWait = this.framesToWait;
+    copy.currentFrame = this.currentFrame;
+    copy.ended = this.ended;
+    copy.endReached = this.endReached;
+    copy.lastInstructions = [...this.lastInstructions];
+    copy.audio = [...this.audio];
+    copy.warnings = [...this.warnings];
+    copy.rowMin.set(this.rowMin);
+    copy.rowMax.set(this.rowMax);
+    copy.dirtyMinY = this.dirtyMinY;
+    copy.dirtyMaxY = this.dirtyMaxY;
+    copy.warned = new Set(this.warned);
+    return copy;
+  }
+
   private buildPalette(): void {
     for (let i = 0; i < 16; i++) this.palette[i] = i;
     const block = this.pan.colorBlock;

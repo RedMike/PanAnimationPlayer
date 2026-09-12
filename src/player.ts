@@ -2,6 +2,7 @@ import { PanFile } from "./pan";
 import { Engine, RegisterInput } from "./sim";
 
 const TICK_MS = 1000 / 18.2;
+const SNAPSHOT_INTERVAL = 64;
 
 export class Player {
   engine: Engine;
@@ -14,6 +15,7 @@ export class Player {
   onPlayState: () => void = () => {};
 
   private timer = 0;
+  private snapshots: Engine[] = [];
 
   constructor(readonly pan: PanFile) {
     this.engine = new Engine(pan);
@@ -29,6 +31,7 @@ export class Player {
   }
 
   reset(): void {
+    this.snapshots.length = 0;
     this.probeLength();
     this.replayTo(Math.min(Math.max(this.frame, 0), this.lastFrame));
   }
@@ -105,14 +108,25 @@ export class Player {
   }
 
   private replayTo(frame: number): void {
-    this.engine = new Engine(this.pan);
+    const index = Math.floor(frame / SNAPSHOT_INTERVAL);
+    const snapshot = this.snapshots[index];
+    if (snapshot && snapshot.currentFrame <= frame) this.engine = snapshot.clone();
+    else {
+      this.snapshots.length = 0;
+      this.engine = new Engine(this.pan);
+    }
     this.advanceTo(frame);
   }
 
   private advanceTo(frame: number): void {
-    while (this.engine.currentFrame < frame && !this.engine.ended) {
-      this.engine.applyRegisters(this.inputs, this.engine.currentFrame + 1);
-      this.engine.runFrame();
+    const engine = this.engine;
+    while (engine.currentFrame < frame && !engine.ended) {
+      const next = engine.currentFrame + 1;
+      engine.applyRegisters(this.inputs, next);
+      engine.runFrame();
+      if (next % SNAPSHOT_INTERVAL === 0 && !this.snapshots[next / SNAPSHOT_INTERVAL]) {
+        this.snapshots[next / SNAPSHOT_INTERVAL] = engine.clone();
+      }
     }
   }
 }
