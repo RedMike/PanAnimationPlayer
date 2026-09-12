@@ -52,15 +52,15 @@ header h1 { font-size: 20px; margin: 0 8px 0 0; color: var(--white); text-shadow
 .file-pick:hover { background: var(--white); }
 .file-pick input { display: none; }
 
-.tips-toggle { display: inline-flex; align-items: center; gap: 4px; color: var(--white); cursor: pointer; text-transform: uppercase; }
+.tips-toggle { display: inline-flex; align-items: center; gap: 4px; }
+.tips-toggle input { margin: 0; }
 
 .links { margin-left: auto; display: flex; gap: 14px; }
-.links a { color: var(--white); text-transform: uppercase; text-decoration: none; border-bottom: 2px solid var(--white); }
-.links a:hover { color: var(--yellow); border-color: var(--yellow); }
+.links a { text-decoration: none; }
 
 .muted { color: var(--grey); }
 
-button, select, input[type="number"], input[type="text"] {
+button, select, input[type="number"], input[type="text"], .tips-toggle, .links a {
   background: var(--grey);
   color: var(--black);
   border: 2px solid;
@@ -74,9 +74,9 @@ input[type="number"], input[type="text"] {
   color: var(--light-green);
   border-color: var(--dark-grey) var(--white) var(--white) var(--dark-grey);
 }
-button { cursor: pointer; text-transform: uppercase; }
-button:hover { background: var(--yellow); }
-button:active { border-color: var(--dark-grey) var(--white) var(--white) var(--dark-grey); }
+button, .tips-toggle, .links a { cursor: pointer; text-transform: uppercase; }
+button:hover, .tips-toggle:hover, .links a:hover { background: var(--yellow); }
+button:active, .links a:active { border-color: var(--dark-grey) var(--white) var(--white) var(--dark-grey); }
 button:disabled { color: var(--dark-grey); cursor: default; background: var(--grey); }
 button.active { background: var(--yellow); }
 input[type="number"] { width: 6em; }
