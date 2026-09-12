@@ -25,6 +25,10 @@ npm run build
 Then open `index.html` in a browser. `npm run watch` rebuilds on change and `npm run check`
 type-checks the sources.
 
+Pushes to `main` build and publish the page to GitHub Pages through the workflow in
+`.github/workflows/pages.yml`; enable Pages with the "GitHub Actions" source in the repository
+settings for it to deploy.
+
 ## Format
 
 The PAN format, its instruction set and sprite step semantics are documented in the
