@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PAN Animation Player</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>PAN Animation Player</h1>
+  <label class="file-pick">Open .PAN <input id="file" type="file" accept=".pan,.PAN"></label>
+  <span id="file-name" class="muted">drop a file anywhere on the page</span>
+  <button id="help-open" type="button">Help</button>
+</header>
+
+<main id="main" hidden>
+  <section class="player">
+    <div class="screen-wrap" id="screen-wrap">
+      <canvas id="screen"></canvas>
+      <canvas id="overlay"></canvas>
+    </div>
+    <div class="controls">
+      <button id="rewind" type="button" title="Rewind (Home)">&#9198;</button>
+      <button id="back" type="button" title="Previous frame (Left)">&#9664;</button>
+      <button id="play" type="button" title="Play / pause (Space)">&#9654;</button>
+      <button id="forward" type="button" title="Next frame (Right)">&#9654;&#65038;|</button>
+      <input id="scrub" type="range" min="0" max="0" value="0">
+      <span id="frame-label" class="mono">0 / 0</span>
+      <label>Speed <select id="speed"><option value="0.25">0.25x</option><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="2">2x</option><option value="4">4x</option><option value="20">max</option></select></label>
+      <label>Zoom <select id="zoom"><option value="fit" selected>fit</option><option value="1">1x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option></select></label>
+      <label>Frames <input id="max-frames" type="number" min="1" max="100000" value="500"></label>
+      <label><input id="transparent" type="checkbox"> Colour 0 transparent</label>
+    </div>
+    <div id="status" class="status mono"></div>
+  </section>
+
+  <aside class="registers">
+    <h2>Input registers</h2>
+    <p class="muted">Values written into VM registers at the start of the given frame. Frame 0 sets them before playback.</p>
+    <table id="inputs"><thead><tr><th>Reg</th><th>Value</th><th>Frame</th><th></th></tr></thead><tbody></tbody></table>
+    <div class="row">
+      <label>Add R<input id="add-register" type="number" min="0" max="50" value="0"></label>
+      <button id="add-input" type="button">Add</button>
+      <button id="clear-inputs" type="button">Clear all</button>
+    </div>
+  </aside>
+
+  <section class="debug">
+    <nav class="tabs" id="tabs">
+      <button type="button" data-tab="info" class="active">Info</button>
+      <button type="button" data-tab="images">Images</button>
+      <button type="button" data-tab="instructions">Instructions</button>
+      <button type="button" data-tab="steps">Steps</button>
+      <button type="button" data-tab="sprites">Sprites</button>
+      <button type="button" data-tab="state">VM state</button>
+      <button type="button" data-tab="warnings">Warnings</button>
+    </nav>
+    <div class="tab" id="tab-info"></div>
+    <div class="tab" id="tab-images" hidden></div>
+    <div class="tab" id="tab-instructions" hidden></div>
+    <div class="tab" id="tab-steps" hidden></div>
+    <div class="tab" id="tab-sprites" hidden></div>
+    <div class="tab" id="tab-state" hidden></div>
+    <div class="tab" id="tab-warnings" hidden></div>
+  </section>
+</main>
+
+<section id="empty" class="empty">
+  <p>Open a Covert Action <code>.PAN</code> file to view it. Nothing is uploaded; everything runs in your browser.</p>
+</section>
+
+<dialog id="help">
+  <div class="help-body">
+    <button id="help-close" type="button" class="close">&times;</button>
+    <h2>Help</h2>
+
+    <h3>Using the viewer</h3>
+    <ul>
+      <li><b>Open</b> a <code>.PAN</code> file with the button or by dropping it on the page.</li>
+      <li><b>Play / pause</b> with the button or <kbd>Space</kbd>. <kbd>&larr;</kbd> and <kbd>&rarr;</kbd> step one frame, <kbd>Home</kbd> rewinds.</li>
+      <li><b>Scrub</b> with the slider. Every frame is recomputed from frame 0, so seeking backwards is exact.</li>
+      <li><b>Frames</b> sets how many frames the slider covers. Animations that end with <code>End</code> keep animating sprites forever, so this is a viewing limit, not a property of the file. <code>EndImmediate</code> stops the animation early and shortens the slider.</li>
+      <li><b>Speed</b> scales the file's frame delay. 1x is the speed the game plays it at (18.2 timer ticks per second).</li>
+      <li><b>Input registers</b> write a value into a VM register at the start of a frame. The game sets registers before playing an animation to choose which sprites appear; frame 0 does the same here. Use the <i>now</i> button to apply a value at the current frame while paused.</li>
+      <li><b>Colour 0 transparent</b> shows colour index 0 as a checkerboard instead of black, which makes the background page visible through unpainted areas.</li>
+      <li>In the <b>Sprites</b> tab, click a row to outline that sprite on the screen.</li>
+    </ul>
+
+    <h3>What a PAN file is</h3>
+    <p>A PAN file is a self-contained animation from Sid Meier's Covert Action: a set of embedded images plus a small program that draws, moves and sequences them. Cutscenes, building interiors and character actions all use this format.</p>
+
+    <h3>Instructions and the VM</h3>
+    <p>The top-level program runs on a stack-based virtual machine with a 16-bit value stack, 51 registers (0 to 50) and one instruction pointer. Values are pushed with <code>Push</code> and consumed by the next instruction. The VM runs until it hits <code>WaitForFrames</code>, then pauses for that many frames while sprites animate. <code>End</code> stops the VM but sprites keep running; <code>EndImmediate</code> stops everything.</p>
+    <ul>
+      <li><b>SetupSprite</b> pops step pointer, sprite index, follow index, X, Y, rate and flags, and starts a sprite in that slot.</li>
+      <li><b>RemoveSprite</b> deactivates a slot. <b>StampSprite</b> draws the sprite permanently into the background page at the end of the frame.</li>
+      <li><b>TriggerAudio</b> queues a sound from the game's audio table; this viewer only lists the index.</li>
+      <li><b>Push R<i>n</i></b> reads a register, <b>PopToRegister</b> writes one. Registers outside 0 to 50 (retail files use -1) discard the value.</li>
+      <li><b>Compare*</b>, <b>Add</b>, <b>Subtract</b>, <b>Multiply</b>, <b>Divide</b> pop two values and push a result. Arithmetic is 16-bit and wraps.</li>
+      <li><b>JumpIf</b> pops a value and jumps when it is non-zero. <b>Jump</b>, <b>Call</b> and <b>Return</b> control flow by absolute byte offset within the data section.</li>
+    </ul>
+
+    <h3>Sprites and steps</h3>
+    <p>There are 50 sprite slots. Each sprite runs its own step sequence: a linear list with counter-based loops but no stack or registers. A sprite only steps on frames its speed allows: the speed is added to a credit each frame and steps run when the credit passes 255. A rate of 255 steps every frame, 128 roughly every other frame.</p>
+    <ul>
+      <li><b>DrawFrame</b> picks the image to show from now on (255 hides the sprite). It is the only step that ends the sprite's turn for the frame.</li>
+      <li><b>MoveAbsolute</b> and <b>MoveRelative</b> change the position. <b>SetSpeed</b> and <b>AddSpeed</b> change the speed.</li>
+      <li><b>PushCounter</b> and <b>JumpIfCounter</b> form loops: the counter is decremented and the jump taken while it is non-zero.</li>
+      <li><b>Restart</b> returns to the first step with the original position and speed; <b>Loop</b> returns to the first step but keeps position and speed.</li>
+      <li><b>Pause</b> freezes the sprite while still drawing it; <b>Stop</b> deactivates it.</li>
+    </ul>
+    <p>A sprite can <b>follow</b> another slot: it is drawn at the followed sprite's position plus its own setup position plus its own movement. Following is a single level deep.</p>
+
+    <h3>Frames and pages</h3>
+    <p>The engine keeps a background page and a draw page. Each frame: the VM runs until a wait, every active sprite steps, stamped sprites are copied into the background, the background is restored over the areas sprites covered last frame, then all visible sprites are drawn in slot order (higher slots on top). Colour 0 in an image is transparent. A sprite set up with non-zero flags is never erased, which retail files use for static background pieces.</p>
+    <p>The <b>background type</b> chooses the initial background page: the previous animation's page (this viewer starts from black), the first image in the file, or a solid colour.</p>
+
+    <h3>Images and colours</h3>
+    <p>Images are 16-colour, LZW and run-length compressed, and indexed through a 250-entry table of image IDs. The file's colour block maps each colour index to one of the 16 standard VGA colours; entry 0 is always black. Retail files map colour 5 to black as well, so magenta never shows.</p>
+
+    <h3>Debug tabs</h3>
+    <ul>
+      <li><b>Info</b>: header fields, colour block, image table.</li>
+      <li><b>Images</b>: every embedded image, shown through the file's colour mapping.</li>
+      <li><b>Instructions</b>: the reachable instruction listing. The highlighted row is the instruction pointer; rows that ran this frame are marked.</li>
+      <li><b>Steps</b>: the reachable step listing. Sprite indices are shown next to their current step; the selected sprite's steps from this frame are marked.</li>
+      <li><b>Sprites</b>: every slot that has been set up, with its live state.</li>
+      <li><b>VM state</b>: instruction pointer, wait counter, stack, registers and audio triggered this frame.</li>
+      <li><b>Warnings</b>: anything unusual the parser or simulation encountered.</li>
+    </ul>
+  </div>
+</dialog>
+
+<script src="dist/app.js"></script>
+</body>
+</html>
