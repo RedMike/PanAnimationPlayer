@@ -22,13 +22,16 @@ const inputsBody = byId<HTMLTableSectionElement>("inputs").querySelector("tbody"
 
 function applyZoom(): void {
   if (!player) return;
-  const wrap = byId("screen-wrap");
-  const fit = zoom.value === "fit";
-  wrap.classList.toggle("fit", fit);
-  const scale = fit ? 1 : Number(zoom.value);
+  const { width, height } = player.pan;
+  let scale = Number(zoom.value);
+  if (zoom.value === "fit") {
+    const parent = byId("screen-wrap").parentElement as HTMLElement;
+    const available = parent.clientWidth - 22;
+    scale = Math.max(1, Math.min(available / width, (window.innerHeight * 0.75) / height, 4));
+  }
   for (const canvas of [screen, overlay]) {
-    canvas.style.width = fit ? "100%" : `${player.pan.width * scale}px`;
-    canvas.style.height = fit ? "auto" : `${player.pan.height * scale}px`;
+    canvas.style.width = `${Math.floor(width * scale)}px`;
+    canvas.style.height = `${Math.floor(height * scale)}px`;
   }
 }
 
@@ -181,6 +184,9 @@ speed.onchange = () => {
   if (player) player.speed = Number(speed.value);
 };
 zoom.onchange = applyZoom;
+window.addEventListener("resize", () => {
+  if (zoom.value === "fit") applyZoom();
+});
 transparent.onchange = render;
 maxFrames.onchange = () => {
   player?.setMaxFrames(Number(maxFrames.value) || 500);

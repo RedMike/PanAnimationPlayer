@@ -100,7 +100,6 @@ main {
   image-rendering: crisp-edges;
 }
 #overlay { position: absolute; left: 0; top: 0; pointer-events: none; }
-.screen-wrap.fit { display: block; width: 100%; max-width: 1280px; }
 
 .controls {
   display: flex;
