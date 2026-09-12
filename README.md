@@ -13,6 +13,7 @@ Everything runs client-side in plain HTML, CSS and JavaScript. No file is upload
 * Disassembled instruction and step listings with live instruction pointer and per-sprite highlights
 * Sprite slot table, VM stack and registers, triggered audio indices and warnings
 * Every embedded image shown through the file's colour block
+* Export any frame range as a WebM video at the file's frame rate
 * Built-in help describing the PAN format and the viewer
 
 ## Building

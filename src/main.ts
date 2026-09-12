@@ -1,4 +1,5 @@
 import { hex } from "./disasm";
+import { ExportJob, exportWebm, frameDelayMs, webmMimeType } from "./export";
 import { toRgba } from "./palette";
 import { Op, PanFile, parsePan } from "./pan";
 import { Player } from "./player";
@@ -207,6 +208,88 @@ for (const button of document.querySelectorAll<HTMLButtonElement>("#tabs button"
     for (const tab of document.querySelectorAll<HTMLElement>(".tab")) tab.hidden = tab.id !== `tab-${button.dataset.tab}`;
   };
 }
+
+const exportDialog = byId<HTMLDialogElement>("export");
+const exportFrom = byId<HTMLInputElement>("export-from");
+const exportTo = byId<HTMLInputElement>("export-to");
+const exportScale = byId<HTMLSelectElement>("export-scale");
+const exportInfo = byId("export-info");
+const exportProgress = byId("export-progress");
+const exportStart = byId<HTMLButtonElement>("export-start");
+const exportCancel = byId<HTMLButtonElement>("export-cancel");
+let exportJob: ExportJob | null = null;
+
+function exportRange(): { from: number; to: number } {
+  if (!player) return { from: 0, to: 0 };
+  const from = Math.max(0, Math.min(Number(exportFrom.value) || 0, player.lastFrame));
+  const to = Math.max(from, Math.min(Number(exportTo.value) || 0, player.lastFrame));
+  return { from, to };
+}
+
+function updateExportInfo(): void {
+  if (!player) return;
+  const { from, to } = exportRange();
+  const frames = to - from + 1;
+  const seconds = (frames * frameDelayMs(player.pan)) / 1000;
+  const scale = Number(exportScale.value);
+  exportInfo.textContent = `${frames} frame${frames === 1 ? "" : "s"}, ${seconds.toFixed(1)} s, ${player.pan.width * scale} x ${player.pan.height * scale}`;
+}
+
+function finishExport(): void {
+  exportJob = null;
+  exportStart.disabled = false;
+  exportCancel.textContent = "Close";
+  exportProgress.hidden = true;
+}
+
+byId("export-open").onclick = () => {
+  if (!player) return;
+  player.pause();
+  if (!webmMimeType()) {
+    alert("This browser cannot record WebM video");
+    return;
+  }
+  exportFrom.value = "0";
+  exportTo.value = String(player.lastFrame);
+  exportFrom.max = exportTo.max = String(player.lastFrame);
+  updateExportInfo();
+  exportDialog.showModal();
+};
+exportFrom.oninput = exportTo.oninput = exportScale.onchange = updateExportInfo;
+exportStart.onclick = () => {
+  if (!player || exportJob) return;
+  const p = player;
+  const { from, to } = exportRange();
+  exportProgress.hidden = false;
+  exportStart.disabled = true;
+  exportCancel.textContent = "Cancel";
+  try {
+    exportJob = exportWebm(p.pan, p.inputs, { from, to, scale: Number(exportScale.value) }, (frame) => {
+      exportProgress.textContent = `Recording frame ${frame} of ${to}`;
+    });
+  } catch (e) {
+    alert((e as Error).message);
+    finishExport();
+    return;
+  }
+  void exportJob.done.then((blob) => {
+    finishExport();
+    if (!blob) return;
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = p.pan.name.replace(/\.pan$/i, "") + `_${from}-${to}.webm`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 10000);
+    exportDialog.close();
+  });
+};
+exportCancel.onclick = () => {
+  if (exportJob) exportJob.cancel();
+  else exportDialog.close();
+};
+exportDialog.oncancel = (e) => {
+  if (exportJob) e.preventDefault();
+};
 
 const help = byId<HTMLDialogElement>("help");
 byId("help-open").onclick = () => help.showModal();

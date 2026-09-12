@@ -31,6 +31,7 @@
       <label>Zoom <select id="zoom"><option value="fit" selected>fit</option><option value="1">1x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option></select></label>
       <label>Frames <input id="max-frames" type="number" min="1" max="100000" value="500"></label>
       <label><input id="transparent" type="checkbox"> Colour 0 transparent</label>
+      <button id="export-open" type="button">Export WebM</button>
     </div>
     <div id="status" class="status mono"></div>
   </section>
@@ -70,6 +71,24 @@
   <p>Open a Covert Action <code>.PAN</code> file to view it. Nothing is uploaded; everything runs in your browser.</p>
 </section>
 
+<dialog id="export">
+  <form class="export-body" id="export-form" method="dialog">
+    <h2>Export WebM</h2>
+    <p class="muted">Frames are recorded in real time at the file's frame delay, so a long range takes as long to export as it does to play.</p>
+    <div class="row">
+      <label>From <input id="export-from" type="number" min="0" value="0"></label>
+      <label>To <input id="export-to" type="number" min="0" value="0"></label>
+      <label>Scale <select id="export-scale"><option value="1">1x</option><option value="2" selected>2x</option><option value="3">3x</option><option value="4">4x</option></select></label>
+    </div>
+    <div id="export-info" class="muted"></div>
+    <div id="export-progress" class="mono" hidden></div>
+    <div class="row">
+      <button id="export-start" type="button">Start</button>
+      <button id="export-cancel" type="button">Close</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="help">
   <div class="help-body">
     <button id="help-close" type="button" class="close">&times;</button>
@@ -85,6 +104,7 @@
       <li><b>Input registers</b> write a value into a VM register at the start of a frame. The game sets registers before playing an animation to choose which sprites appear; frame 0 does the same here. Use the <i>now</i> button to apply a value at the current frame while paused.</li>
       <li><b>Colour 0 transparent</b> shows colour index 0 as a checkerboard instead of black, which makes the background page visible through unpainted areas.</li>
       <li>In the <b>Sprites</b> tab, click a row to outline that sprite on the screen.</li>
+      <li><b>Export WebM</b> records a frame range as a video at the file's own frame rate, using the current input registers. Recording happens in real time, so it takes as long as playing the range. The file downloads when it finishes.</li>
     </ul>
 
     <h3>What a PAN file is</h3>
