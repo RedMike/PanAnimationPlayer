@@ -1,5 +1,7 @@
 # PAN Animation Player
 
+![Title Screen](/assets/title.png "Title Screen")
+
 A browser-based viewer for the `.PAN` animation files used by Sid Meier's Covert Action (1990).
 Open a file and it plays the animation exactly as the game's engine would, with full visibility
 into the virtual machine that drives it.
